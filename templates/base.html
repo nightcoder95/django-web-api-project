@@ -30,7 +30,7 @@
                 {% elif user.role == 'staff' %}
                     <a class="nav-link" href="{% url 'export_data' %}">Export</a>
                 {% endif %}
-                {% if user.role == 'agent' %}
+                {% if user.role == 'agent' or user.role == 'admin' %}
                     <a class="nav-link" href="{% url 'product_create' %}">Add Product</a>
                 {% endif %}
                 {% if user.role == 'end_user' %}

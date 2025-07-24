@@ -7,6 +7,7 @@
         <div class="card">
             <div class="card-header">
                 <h4>Add New Product</h4>
+                <small class="text-muted">Create a new product for the system</small>
             </div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
@@ -42,6 +43,17 @@
                             <div class="text-danger">{{ form.price.errors }}</div>
                         {% endif %}
                     </div>
+                    
+                    {% if is_admin %}
+                    <div class="mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                        {{ form.status }}
+                        <div class="form-text">{{ form.status.help_text }}</div>
+                        {% if form.status.errors %}
+                            <div class="text-danger">{{ form.status.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     
                     <div class="mb-3">
                         <label for="{{ form.video.id_for_label }}" class="form-label">Product Video (Optional)</label>

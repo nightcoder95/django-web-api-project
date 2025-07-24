@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.views.generic import CreateView, ListView, DetailView
+from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.http import JsonResponse
@@ -10,7 +10,7 @@ from django.core.exceptions import PermissionDenied
 import json
 
 from .models import Product, Category, ProductVideo
-from .forms import ProductForm, CategoryForm
+from .forms import ProductForm, CategoryForm, AdminProductForm
 from .permissions import IsAdmin, IsStaff
 
 
@@ -45,13 +45,22 @@ class ProductDetailView(LoginRequiredMixin, DetailView):
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
-    form_class = ProductForm
     template_name = 'products/product_create.html'
     success_url = reverse_lazy('product_list')
     
+    def get_form_class(self):
+        if self.request.user.role == 'admin':
+            return AdminProductForm
+        return ProductForm
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_admin'] = self.request.user.role == 'admin'
+        return context
+    
     def form_valid(self, form):
-        if self.request.user.role != 'agent':
-            raise PermissionDenied("Only agents can create products.")
+        if self.request.user.role not in ['agent', 'admin']:
+            raise PermissionDenied("Only agents and admins can create products.")
         form.instance.created_by = self.request.user
         messages.success(self.request, 'Product created successfully!')
         return super().form_valid(form)
@@ -77,6 +86,44 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         messages.success(self.request, 'Category created successfully!')
         return super().form_valid(form)
+
+
+class CategoryUpdateView(LoginRequiredMixin, UpdateView):
+    model = Category
+    form_class = CategoryForm
+    template_name = 'categories/category_edit.html'
+    success_url = reverse_lazy('category_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.role != 'admin':
+            raise PermissionDenied("Only admins can edit categories.")
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        messages.success(self.request, f'Category "{form.instance.name}" updated successfully!')
+        return super().form_valid(form)
+
+
+class CategoryDeleteView(LoginRequiredMixin, DeleteView):
+    model = Category
+    template_name = 'categories/category_confirm_delete.html'
+    success_url = reverse_lazy('category_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.role != 'admin':
+            raise PermissionDenied("Only admins can delete categories.")
+        return super().dispatch(request, *args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        category = self.get_object()
+        category_name = category.name
+        try:
+            response = super().delete(request, *args, **kwargs)
+            messages.success(request, f'Category "{category_name}" deleted successfully!')
+            return response
+        except Exception as e:
+            messages.error(request, f'Cannot delete category "{category_name}". It may be used by existing products.')
+            return redirect('category_list')
 
 
 @login_required

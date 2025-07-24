@@ -1,7 +1,7 @@
 from django.urls import path
 from .template_views import (
     ProductListView, ProductDetailView, ProductCreateView,
-    CategoryListView, CategoryCreateView,
+    CategoryListView, CategoryCreateView, CategoryUpdateView, CategoryDeleteView,
     product_approve_reject, upload_video, video_status
 )
 from .export_views import (
@@ -21,6 +21,8 @@ urlpatterns = [
     # Category URLs  
     path('categories/', CategoryListView.as_view(), name='category_list'),
     path('categories/create/', CategoryCreateView.as_view(), name='category_create'),
+    path('categories/<int:pk>/edit/', CategoryUpdateView.as_view(), name='category_edit'),
+    path('categories/<int:pk>/delete/', CategoryDeleteView.as_view(), name='category_delete'),
     
     # Video URLs
     path('products/<int:product_id>/upload-video/', upload_video, name='upload_video'),
