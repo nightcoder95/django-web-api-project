@@ -1,8 +1,13 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser
+import threading
+import time
 
-from .models import Category, Product
+from .models import Category, Product, ProductVideo
 from .serializers import CategorySerializer, ProductSerializer
 from .permissions import IsAdmin, IsOwnerOrAdmin, IsStaff
 
@@ -47,8 +52,6 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
 # STAFF ONLY: Approve/Reject
-from rest_framework.views import APIView
-
 class ProductApproveRejectView(APIView):
     permission_classes = [IsStaff]
 
@@ -65,3 +68,62 @@ class ProductApproveRejectView(APIView):
         product.status = 'approved' if action == 'approve' else 'rejected'
         product.save()
         return Response({"detail": f"Product {action}d successfully."})
+
+
+# threading function to process video uploads
+def process_video(video_id):
+    def run():
+        try:
+            video = ProductVideo.objects.get(id=video_id)
+            video.status = 'processing'
+            video.save()
+            
+            # Simulate heavy processing
+            time.sleep(3)
+
+            video.status = 'done'
+            video.save()
+        except Exception as e:
+            video.status = 'failed'
+            video.save()
+
+    thread = threading.Thread(target=run)
+    thread.start()
+
+
+# View to handle video uploads for products
+class ProductVideoUploadView(APIView):
+    parser_classes = [MultiPartParser]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, product_id):
+        product = Product.objects.get(id=product_id)
+        videos = request.FILES.getlist('videos')
+
+        if not videos:
+            return Response({'detail': 'No videos provided'}, status=400)
+
+        if len(videos) > 5:
+            return Response({'detail': 'Max 5 videos allowed'}, status=400)
+
+        total_size = sum(v.size for v in videos)
+        if total_size > 20 * 1024 * 1024:
+            return Response({'detail': 'Total video size exceeds 20MB'}, status=400)
+
+        uploaded_video_ids = []
+
+        for video in videos:
+            pv = ProductVideo.objects.create(product=product, video_file=video, status='pending')
+            uploaded_video_ids.append(pv.id)
+            process_video(pv.id)
+
+        return Response({'detail': 'Videos uploaded & processing started', 'video_ids': uploaded_video_ids})
+
+class ProductVideoStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, product_id):
+        videos = ProductVideo.objects.filter(product_id=product_id)
+        return Response([
+            {'id': v.id, 'status': v.status, 'file': v.video_file.url} for v in videos
+        ])

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ user.get_role_display }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Dashboard - {{ user.get_role_display }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if user.role == 'admin' %}
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h5>Admin Panel</h5>
+                                    <p>Full access to all features</p>
+                                    <a href="{% url 'category_list' %}" class="btn btn-light btn-sm">Manage Categories</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h5>All Products</h5>
+                                    <p>View and manage all products</p>
+                                    <a href="{% url 'product_list' %}" class="btn btn-light btn-sm">View Products</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    {% elif user.role == 'staff' %}
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h5>Review Products</h5>
+                                    <p>Approve or reject uploaded products</p>
+                                    <a href="{% url 'product_list' %}" class="btn btn-light btn-sm">Review Products</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    {% elif user.role == 'agent' %}
+                        <div class="col-md-4">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h5>My Products</h5>
+                                    <p>Upload and manage your products</p>
+                                    <a href="{% url 'product_list' %}" class="btn btn-light btn-sm">My Products</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-secondary text-white">
+                                <div class="card-body">
+                                    <h5>Upload Product</h5>
+                                    <p>Add new products to the system</p>
+                                    <a href="{% url 'product_create' %}" class="btn btn-light btn-sm">Add Product</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    {% elif user.role == 'end_user' %}
+                        <div class="col-md-6">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h5>Browse Products</h5>
+                                    <p>View approved products available for purchase</p>
+                                    <a href="{% url 'product_list' %}" class="btn btn-light btn-sm">Browse Products</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5>Quick Stats</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <h6>Role</h6>
+                                        <span class="badge bg-primary fs-6">{{ user.get_role_display }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-info">
+                                    <div class="card-body text-center">
+                                        <h6>Account</h6>
+                                        <p class="mb-0">{{ user.email }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-success">
+                                    <div class="card-body text-center">
+                                        <h6>Member Since</h6>
+                                        <p class="mb-0">{{ user.date_joined|date:"M Y" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -28,3 +28,15 @@ class Product(models.Model):
     @property
     def is_approved(self):
         return self.status == 'approved'
+
+
+class ProductVideo(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='videos')
+    video_file = models.FileField(upload_to='product_videos/')
+    status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('done', 'Done'),
+        ('failed', 'Failed'),
+    ], default='pending')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
