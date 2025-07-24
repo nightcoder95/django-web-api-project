@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>{{ product.title }}</h4>
+                {% if product.status == 'approved' %}
+                    <span class="badge bg-success fs-6">{{ product.get_status_display }}</span>
+                {% elif product.status == 'rejected' %}
+                    <span class="badge bg-danger fs-6">{{ product.get_status_display }}</span>
+                {% elif product.status == 'uploaded' %}
+                    <span class="badge bg-warning fs-6">{{ product.get_status_display }}</span>
+                {% else %}
+                    <span class="badge bg-secondary fs-6">{{ product.get_status_display }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% if product.video %}
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px; border-radius: 8px;">
+                                <i class="fas fa-video fa-4x text-muted"></i>
+                            </div>
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px; border-radius: 8px;">
+                                <i class="fas fa-image fa-4x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="text-primary">${{ product.price }}</h5>
+                        <p><strong>Category:</strong> {{ product.category.name }}</p>
+                        <p><strong>Created by:</strong> {{ product.created_by.username }}</p>
+                        <p><strong>Created:</strong> {{ product.created_at|date:"F d, Y" }}</p>
+                        <p><strong>Last Updated:</strong> {{ product.updated_at|date:"F d, Y" }}</p>
+                        
+                        {% if product.is_approved %}
+                            <div class="alert alert-success" role="alert">
+                                <i class="fas fa-check-circle"></i> This product is approved and available for purchase.
+                            </div>
+                            
+                            {% if user.role == 'end_user' %}
+                                <form method="post" action="{% url 'add_to_cart' product.id %}" class="mt-3">
+                                    {% csrf_token %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <label for="quantity" class="form-label mb-0">Quantity:</label>
+                                        <input type="number" name="quantity" id="quantity" value="1" min="1" max="10" class="form-control" style="width: 80px;">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-cart-plus"></i> Add to Cart
+                                        </button>
+                                    </div>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h5>Description</h5>
+                <p>{{ product.description }}</p>
+                
+                <!-- Videos Section -->
+                {% if videos %}
+                    <hr>
+                    <h5>Product Videos</h5>
+                    <div class="row">
+                        {% for video in videos %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-video fa-2x text-muted mb-2"></i>
+                                        <p class="card-text small">Video {{ forloop.counter }}</p>
+                                        {% if video.status == 'done' %}
+                                            <span class="badge bg-success">Processed</span>
+                                        {% elif video.status == 'processing' %}
+                                            <span class="badge bg-warning">Processing</span>
+                                        {% elif video.status == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Pending</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Actions Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Actions</h5>
+            </div>
+            <div class="card-body">
+                <!-- Staff Review Actions -->
+                {% if user.role in 'admin,staff' and product.status == 'uploaded' %}
+                    <div class="mb-3">
+                        <h6>Review Product</h6>
+                        <form method="post" action="{% url 'product_approve_reject' product.id %}">
+                            {% csrf_token %}
+                            <div class="mb-2">
+                                <select name="action" class="form-select">
+                                    <option value="approve">Approve Product</option>
+                                    <option value="reject">Reject Product</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+                        </form>
+                    </div>
+                    <hr>
+                {% endif %}
+                
+                <!-- Video Management -->
+                <div class="mb-3">
+                    <h6>Video Management</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'upload_video' product.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-upload"></i> Upload Videos
+                        </a>
+                        <a href="{% url 'video_status' product.id %}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-eye"></i> Check Video Status
+                        </a>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Navigation -->
+                <div class="d-grid">
+                    <a href="{% url 'product_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Products
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Info Card -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Product Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted">Product ID:</small><br>
+                    <strong>#{{ product.id }}</strong>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Category:</small><br>
+                    <strong>{{ product.category.name }}</strong>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Status:</small><br>
+                    <strong>{{ product.get_status_display }}</strong>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Price:</small><br>
+                    <strong class="text-success">${{ product.price }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

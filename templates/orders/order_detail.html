@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4><i class="fas fa-receipt"></i> Order #{{ order.id }}</h4>
+                {% if order.status == 'pending' %}
+                    <span class="badge bg-warning fs-6">{{ order.get_status_display }}</span>
+                {% elif order.status == 'confirmed' %}
+                    <span class="badge bg-info fs-6">{{ order.get_status_display }}</span>
+                {% elif order.status == 'delivered' %}
+                    <span class="badge bg-success fs-6">{{ order.get_status_display }}</span>
+                {% elif order.status == 'cancelled' %}
+                    <span class="badge bg-danger fs-6">{{ order.get_status_display }}</span>
+                {% else %}
+                    <span class="badge bg-secondary fs-6">{{ order.get_status_display }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Order Information</h6>
+                        <p><strong>Order Date:</strong> {{ order.created_at|date:"F d, Y H:i" }}</p>
+                        <p><strong>Last Updated:</strong> {{ order.updated_at|date:"F d, Y H:i" }}</p>
+                        <p><strong>Total Amount:</strong> <span class="text-success fs-5">${{ order.total_amount }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Customer Information</h6>
+                        <p><strong>Name:</strong> {{ order.user.username }}</p>
+                        <p><strong>Email:</strong> {{ order.user.email }}</p>
+                        <p><strong>Role:</strong> {{ order.user.get_role_display }}</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h5>Order Items</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-end">Unit Price</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order_items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.product.title }}</strong>
+                                        <br><small class="text-muted">{{ item.product.description|truncatewords:10 }}</small>
+                                    </td>
+                                    <td>{{ item.product.category.name }}</td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-end">${{ item.price }}</td>
+                                    <td class="text-end"><strong>${{ item.total_price }}</strong></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="4" class="text-end">Total:</th>
+                                <th class="text-end text-success">${{ order.total_amount }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                {% if decrypted_data %}
+                    <hr>
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lock-open"></i> Decrypted Order Data (AES)</h6>
+                        <div class="mt-2">
+                            <small><strong>Customer:</strong> {{ decrypted_data.customer.username }} ({{ decrypted_data.customer.email }})</small>
+                        </div>
+                        <details class="mt-2">
+                            <summary>View Raw Encrypted Data</summary>
+                            <pre class="mt-2 p-2 bg-light small">{{ decrypted_data|pprint }}</pre>
+                        </details>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Order Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Order Placed</span>
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Payment Confirmed</span>
+                        {% if order.status in 'confirmed,processing,shipped,delivered' %}
+                            <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-clock text-muted"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Processing</span>
+                        {% if order.status in 'processing,shipped,delivered' %}
+                            <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-clock text-muted"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Shipped</span>
+                        {% if order.status in 'shipped,delivered' %}
+                            <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-clock text-muted"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Delivered</span>
+                        {% if order.status == 'delivered' %}
+                            <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-clock text-muted"></i>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Secure Order</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <i class="fas fa-shield-alt fa-3x text-success mb-2"></i>
+                    <h6>AES Encrypted</h6>
+                    <p class="small text-muted">Your order data is securely encrypted using AES encryption for maximum privacy and security.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'order_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> View All Orders
+                    </a>
+                    <a href="{% url 'product_list' %}" class="btn btn-outline-success">
+                        <i class="fas fa-shopping-bag"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}Dummy Data Generator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-cogs"></i> Dummy Data Generator</h4>
+                <small class="text-muted">Generate dummy products and categories for testing</small>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'generate_dummy_data' %}" id="generatorForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="products" class="form-label">Number of Products</label>
+                                <input type="number" class="form-control" name="products" id="products" 
+                                       value="100" min="1" max="10000" required>
+                                <div class="form-text">Maximum: 10,000 products</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="categories" class="form-label">Number of Categories</label>
+                                <input type="number" class="form-control" name="categories" id="categories" 
+                                       value="10" min="1" max="100" required>
+                                <div class="form-text">Maximum: 100 categories</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="threads" class="form-label">Number of Threads</label>
+                                <input type="number" class="form-control" name="threads" id="threads" 
+                                       value="4" min="1" max="10" required>
+                                <div class="form-text">Maximum: 10 threads</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Generation Process:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Categories will be created first</li>
+                            <li>Agent users will be created if they don't exist</li>
+                            <li>Products will be generated using multiple threads</li>
+                            <li>Process runs in background - page will not wait</li>
+                        </ul>
+                    </div>
+                    
+                    <div id="progressSection" style="display: none;">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <strong>Generation in progress...</strong>
+                            <div class="progress mt-2">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="generateBtn">
+                            <i class="fas fa-play"></i> Start Generation
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                            <i class="fas fa-undo"></i> Reset Form
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="checkProgress()">
+                            <i class="fas fa-sync"></i> Check Progress
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Current Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-12 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h3 id="productsCount">{{ current_products_count }}</h3>
+                                <small>Total Products</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h3 id="categoriesCount">{{ current_categories_count }}</h3>
+                                <small>Total Categories</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h3>{{ agent_users_count }}</h3>
+                                <small>Agent Users</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="setQuickValues(1000, 20, 4)">
+                        Generate 1K Products
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="setQuickValues(5000, 50, 8)">
+                        Generate 5K Products
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="setQuickValues(10000, 100, 10)">
+                        Generate 10K Products
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function resetForm() {
+    document.getElementById('products').value = 100;
+    document.getElementById('categories').value = 10;
+    document.getElementById('threads').value = 4;
+}
+
+function setQuickValues(products, categories, threads) {
+    document.getElementById('products').value = products;
+    document.getElementById('categories').value = categories;
+    document.getElementById('threads').value = threads;
+}
+
+function checkProgress() {
+    fetch('{% url "dummy_data_progress" %}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('productsCount').textContent = data.products_count;
+            document.getElementById('categoriesCount').textContent = data.categories_count;
+        })
+        .catch(error => {
+            console.error('Error checking progress:', error);
+        });
+}
+
+document.getElementById('generatorForm').addEventListener('submit', function(e) {
+    const generateBtn = document.getElementById('generateBtn');
+    const progressSection = document.getElementById('progressSection');
+    
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    progressSection.style.display = 'block';
+    
+    // Start checking progress every 5 seconds
+    const progressInterval = setInterval(checkProgress, 5000);
+    
+    // Re-enable button after 10 seconds
+    setTimeout(() => {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<i class="fas fa-play"></i> Start Generation';
+        progressSection.style.display = 'none';
+        clearInterval(progressInterval);
+    }, 10000);
+});
+
+// Check progress on page load
+document.addEventListener('DOMContentLoaded', checkProgress);
+</script>
+{% endblock %}

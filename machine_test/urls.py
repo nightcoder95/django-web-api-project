@@ -16,9 +16,29 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from django.shortcuts import redirect
+
+def home_redirect(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return redirect('login')
 
 urlpatterns = [
+    path('', home_redirect, name='home'),
     path('admin/', admin.site.urls),
+    
+    # API URLs
     path('api/users/', include('apps.users.urls')),
     path('api/products/', include('apps.products.urls')),
+    
+    # Template-based URLs
+    path('', include('apps.users.template_urls')),
+    path('', include('apps.products.template_urls')),
+    path('', include('apps.orders.template_urls')),
 ]
+
+# Serve media files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Export Data{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-download"></i> Export Data</h4>
+                <small class="text-muted">Download products and categories in CSV or Excel format</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h5><i class="fas fa-box"></i> Products Export</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Export {{ products_count }} products with complete details including category, price, status, and timestamps.</p>
+                                
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'export_products_csv' %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-file-csv"></i> Download CSV
+                                    </a>
+                                    <a href="{% url 'export_products_excel' %}" class="btn btn-outline-success">
+                                        <i class="fas fa-file-excel"></i> Download Excel
+                                    </a>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <strong>Includes:</strong> ID, Title, Description, Category, Price, Status, Created By, Timestamps
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h5><i class="fas fa-folder"></i> Categories Export</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Export {{ categories_count }} categories with product counts for analysis and reporting.</p>
+                                
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'export_categories_csv' %}" class="btn btn-outline-success">
+                                        <i class="fas fa-file-csv"></i> Download CSV
+                                    </a>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <strong>Includes:</strong> ID, Name, Product Count
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-4">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Export Information:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>CSV files can be opened in Excel, Google Sheets, or any text editor</li>
+                        <li>Excel files (.xlsx) provide better formatting and styling</li>
+                        <li>Large datasets may take a few seconds to generate</li>
+                        <li>Files are generated with timestamp in filename</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Export Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-12 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h3>{{ products_count }}</h3>
+                                <small>Available Products</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h3>{{ categories_count }}</h3>
+                                <small>Available Categories</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if user.role == 'admin' %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-crown"></i>
+                        <strong>Admin Access:</strong> You can export all products and categories.
+                    </div>
+                {% elif user.role == 'staff' %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-user-tie"></i>
+                        <strong>Staff Access:</strong> You can export products pending review.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'product_list' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list"></i> View Products
+                    </a>
+                    {% if user.role == 'admin' %}
+                        <a href="{% url 'category_list' %}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-folder"></i> View Categories
+                        </a>
+                        <a href="{% url 'dummy_generator' %}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-cogs"></i> Generate Data
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4><i class="fas fa-shopping-cart"></i> Your Cart</h4>
+                <span class="badge bg-primary">{{ cart.total_items }} items</span>
+            </div>
+            <div class="card-body">
+                {% if cart_items %}
+                    {% for item in cart_items %}
+                        <div class="row align-items-center mb-3 pb-3 border-bottom">
+                            <div class="col-md-2">
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 80px; border-radius: 8px;">
+                                    <i class="fas fa-box fa-2x text-muted"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>{{ item.product.title }}</h6>
+                                <p class="text-muted small mb-1">{{ item.product.category.name }}</p>
+                                <span class="text-success fw-bold">${{ item.product.price }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <form method="post" action="{% url 'update_cart_item' item.id %}" class="d-flex align-items-center">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="changeQuantity({{ item.id }}, -1)">-</button>
+                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99" class="form-control text-center" style="width: 60px;" id="qty-{{ item.id }}">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" onclick="changeQuantity({{ item.id }}, 1)">+</button>
+                                    <button type="submit" class="btn btn-primary btn-sm ms-2">Update</button>
+                                </form>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <div class="fw-bold">${{ item.total_price }}</div>
+                            </div>
+                            <div class="col-md-1">
+                                <form method="post" action="{% url 'remove_from_cart' item.id %}" onsubmit="return confirm('Remove this item from cart?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Your cart is empty</h5>
+                        <p class="text-muted">Browse products and add them to your cart.</p>
+                        <a href="{% url 'product_list' %}" class="btn btn-primary">
+                            <i class="fas fa-shopping-bag"></i> Continue Shopping
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% if cart_items %}
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Items ({{ cart.total_items }}):</span>
+                    <span>${{ cart.total_amount }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping:</span>
+                    <span class="text-success">Free</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-3">
+                    <strong>Total:</strong>
+                    <strong class="text-primary">${{ cart.total_amount }}</strong>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'checkout' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-credit-card"></i> Proceed to Checkout
+                    </a>
+                    <a href="{% url 'product_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6><i class="fas fa-shield-alt text-success"></i> Secure Checkout</h6>
+                <p class="small text-muted mb-0">Your order data is encrypted using AES encryption for maximum security.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function changeQuantity(itemId, change) {
+    const input = document.getElementById('qty-' + itemId);
+    let currentValue = parseInt(input.value);
+    let newValue = currentValue + change;
+    
+    if (newValue >= 1 && newValue <= 99) {
+        input.value = newValue;
+    }
+}
+
+// Auto-update cart count in navigation
+function updateCartCount() {
+    fetch('{% url "cart_count" %}')
+        .then(response => response.json())
+        .then(data => {
+            const cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = data.count;
+            }
+        });
+}
+
+// Update cart count on page load
+document.addEventListener('DOMContentLoaded', updateCartCount);
+</script>
+{% endblock %}

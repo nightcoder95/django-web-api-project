@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Upload Videos - {{ product.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4>Upload Videos for "{{ product.title }}"</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Video Upload Guidelines:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Maximum 5 videos per product</li>
+                        <li>Total size limit: 20MB</li>
+                        <li>Supported formats: MP4, MOV, AVI</li>
+                    </ul>
+                </div>
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="videos" class="form-label">Select Videos</label>
+                        <input type="file" class="form-control" name="videos" id="videos" multiple accept="video/*">
+                        <div class="form-text">Hold Ctrl/Cmd to select multiple files</div>
+                    </div>
+                    
+                    <div id="file-info" class="mb-3"></div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="upload-btn">
+                            <i class="fas fa-upload"></i> Upload Videos
+                        </button>
+                        <a href="{% url 'product_detail' product.id %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('videos').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const fileInfo = document.getElementById('file-info');
+    const uploadBtn = document.getElementById('upload-btn');
+    
+    if (files.length === 0) {
+        fileInfo.innerHTML = '';
+        return;
+    }
+    
+    let totalSize = 0;
+    let fileList = '<div class="alert alert-secondary"><strong>Selected Files:</strong><ul class="mb-0 mt-2">';
+    
+    for (let i = 0; i < files.length; i++) {
+        totalSize += files[i].size;
+        const sizeMB = (files[i].size / (1024 * 1024)).toFixed(2);
+        fileList += `<li>${files[i].name} (${sizeMB} MB)</li>`;
+    }
+    
+    fileList += '</ul></div>';
+    
+    const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+    
+    if (files.length > 5) {
+        fileInfo.innerHTML = fileList + '<div class="alert alert-danger">❌ Too many files! Maximum 5 videos allowed.</div>';
+        uploadBtn.disabled = true;
+    } else if (totalSize > 20 * 1024 * 1024) {
+        fileInfo.innerHTML = fileList + `<div class="alert alert-danger">❌ Total size (${totalSizeMB} MB) exceeds 20MB limit!</div>`;
+        uploadBtn.disabled = true;
+    } else {
+        fileInfo.innerHTML = fileList + `<div class="alert alert-success">✅ Ready to upload! Total size: ${totalSizeMB} MB</div>`;
+        uploadBtn.disabled = false;
+    }
+});
+</script>
+{% endblock %}
